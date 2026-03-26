@@ -80,7 +80,8 @@ public class AuthService {
                 token,
                 "Login successful",
                 user.getRole().name(),
-                user.getEmail()
+                user.getEmail(),
+                user.getId()
         );
     }
 }
