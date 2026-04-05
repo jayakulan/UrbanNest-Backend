@@ -22,6 +22,13 @@ public class PropertyController {
         return ResponseEntity.ok(savedProperty);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Property> getPropertyById(@PathVariable Long id) {
+        return propertyRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<List<Property>> getPropertiesByOwner(@PathVariable Long ownerId) {
         return ResponseEntity.ok(propertyRepository.findByOwnerId(ownerId));
