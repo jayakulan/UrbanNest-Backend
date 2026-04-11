@@ -40,6 +40,12 @@ public class BookingController {
         return ResponseEntity.ok(bookingRepository.findByPropertyId(propertyId));
     }
 
+    // Admin: get all bookings
+    @GetMapping
+    public ResponseEntity<List<Booking>> getAllBookings() {
+        return ResponseEntity.ok(bookingRepository.findAll());
+    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<Booking> updateBookingStatus(
             @PathVariable Long id,

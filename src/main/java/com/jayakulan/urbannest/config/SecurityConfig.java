@@ -38,12 +38,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/ws/**")   // WebSocket handshake must not require CSRF token
+                        .disable()
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // CORS preflight
-                        .requestMatchers("/api/auth/**").permitAll()               // Public auth endpoints
-                        .requestMatchers("/error").permitAll()                     // Spring error dispatcher
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()       // CORS preflight
+                        .requestMatchers("/api/auth/**").permitAll()                  // Public auth
+                        .requestMatchers("/error").permitAll()                        // Spring error dispatcher
+                        .requestMatchers("/ws/**").permitAll()                        // WebSocket + SockJS handshake
+                        .requestMatchers("/api/messages/**").permitAll()              // Messaging REST endpoints
                         .requestMatchers(HttpMethod.GET, "/api/properties/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
