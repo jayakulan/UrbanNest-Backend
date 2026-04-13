@@ -1,14 +1,14 @@
 package com.jayakulan.urbannest.controller;
 
+import com.jayakulan.urbannest.dto.PropertyDTO;
 import com.jayakulan.urbannest.entity.Property;
-import com.jayakulan.urbannest.repository.PropertyRepository;
+import com.jayakulan.urbannest.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -16,48 +16,51 @@ import java.util.Optional;
 public class PropertyController {
 
     @Autowired
-    private PropertyRepository propertyRepository;
+    private PropertyService propertyService;
 
-    @PostMapping
-    public ResponseEntity<Property> createProperty(@RequestBody Property property) {
-        Property savedProperty = propertyRepository.save(property);
-        return ResponseEntity.ok(savedProperty);
+    @GetMapping
+    public ResponseEntity<List<PropertyDTO>> getAllProperties() {
+        return ResponseEntity.ok(propertyService.getAllProperties());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Property> getPropertyById(@PathVariable Long id) {
-        return propertyRepository.findById(id)
+    public ResponseEntity<PropertyDTO> getPropertyById(@PathVariable Long id) {
+        return propertyService.getPropertyById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<Property>> getPropertiesByOwner(@PathVariable Long ownerId) {
-        return ResponseEntity.ok(propertyRepository.findByOwnerId(ownerId));
+    public ResponseEntity<List<PropertyDTO>> getByOwner(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(propertyService.getPropertiesByOwner(ownerId));
     }
 
-    @GetMapping
-    public ResponseEntity<List<Property>> getAllProperties() {
-        return ResponseEntity.ok(propertyRepository.findAll());
+    @PostMapping
+    public ResponseEntity<PropertyDTO> createProperty(@RequestBody Property property) {
+        return ResponseEntity.ok(propertyService.saveProperty(property));
     }
 
-    // Admin: update property availability/approval status
+    @PutMapping("/{id}")
+    public ResponseEntity<PropertyDTO> updateProperty(
+            @PathVariable Long id,
+            @RequestBody Property property) {
+        property.setId(id);
+        return ResponseEntity.ok(propertyService.saveProperty(property));
+    }
+
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Property> updateStatus(
+    public ResponseEntity<PropertyDTO> updateStatus(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-        Optional<Property> opt = propertyRepository.findById(id);
-        if (!opt.isPresent()) return ResponseEntity.notFound().build();
-        Property property = opt.get();
-        property.setAvailabilityStatus(body.get("status"));
-        return ResponseEntity.ok(propertyRepository.save(property));
+        return propertyService.updateStatus(id, body.get("status"))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // Admin: delete a property
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
-        if (!propertyRepository.existsById(id)) return ResponseEntity.notFound().build();
-        propertyRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+        return propertyService.deleteProperty(id)
+                ? ResponseEntity.ok().<Void>build()
+                : ResponseEntity.notFound().build();
     }
 }

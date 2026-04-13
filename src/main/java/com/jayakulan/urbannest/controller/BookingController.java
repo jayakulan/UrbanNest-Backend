@@ -1,9 +1,8 @@
 package com.jayakulan.urbannest.controller;
 
+import com.jayakulan.urbannest.dto.BookingDTO;
 import com.jayakulan.urbannest.entity.Booking;
-import com.jayakulan.urbannest.entity.Property;
-import com.jayakulan.urbannest.repository.BookingRepository;
-import com.jayakulan.urbannest.repository.PropertyRepository;
+import com.jayakulan.urbannest.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,59 +15,39 @@ import java.util.List;
 public class BookingController {
 
     @Autowired
-    private BookingRepository bookingRepository;
-
-    @Autowired
-    private PropertyRepository propertyRepository;
+    private BookingService bookingService;
 
     @PostMapping
-    public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
-        if (booking.getStatus() == null) {
-            booking.setStatus("PENDING");
-        }
-        Booking savedBooking = bookingRepository.save(booking);
-        return ResponseEntity.ok(savedBooking);
+    public ResponseEntity<BookingDTO> createBooking(@RequestBody Booking booking) {
+        return ResponseEntity.ok(bookingService.create(booking));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<BookingDTO>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
     @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<List<Booking>> getBookingsByTenant(@PathVariable Long tenantId) {
-        return ResponseEntity.ok(bookingRepository.findByTenantId(tenantId));
+    public ResponseEntity<List<BookingDTO>> getByTenant(@PathVariable Long tenantId) {
+        return ResponseEntity.ok(bookingService.getByTenant(tenantId));
     }
 
     @GetMapping("/property/{propertyId}")
-    public ResponseEntity<List<Booking>> getBookingsByProperty(@PathVariable Long propertyId) {
-        return ResponseEntity.ok(bookingRepository.findByPropertyId(propertyId));
+    public ResponseEntity<List<BookingDTO>> getByProperty(@PathVariable Long propertyId) {
+        return ResponseEntity.ok(bookingService.getByProperty(propertyId));
     }
 
-    // Admin: get all bookings
-    @GetMapping
-    public ResponseEntity<List<Booking>> getAllBookings() {
-        return ResponseEntity.ok(bookingRepository.findAll());
+    @GetMapping("/owner/{ownerId}/earnings")
+    public ResponseEntity<List<BookingDTO>> getOwnerEarnings(@PathVariable Long ownerId) {
+        return ResponseEntity.ok(bookingService.getOwnerEarnings(ownerId));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Booking> updateBookingStatus(
+    public ResponseEntity<BookingDTO> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {
-        return bookingRepository.findById(id)
-                .map(booking -> {
-                    String newStatus = status.toUpperCase();
-                    booking.setStatus(newStatus);
-                    Booking saved = bookingRepository.save(booking);
-
-                    // Auto-update property availability based on booking status
-                    propertyRepository.findById(booking.getPropertyId()).ifPresent(property -> {
-                        if ("APPROVED".equals(newStatus)) {
-                            property.setAvailabilityStatus("RENTED");
-                        } else if ("REJECTED".equals(newStatus) || "COMPLETED".equals(newStatus)) {
-                            property.setAvailabilityStatus("Available");
-                        }
-                        propertyRepository.save(property);
-                    });
-
-                    return ResponseEntity.ok(saved);
-                })
+        return bookingService.updateStatus(id, status)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 }
-
