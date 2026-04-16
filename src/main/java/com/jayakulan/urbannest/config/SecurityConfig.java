@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()                        // Spring error dispatcher
                         .requestMatchers("/ws/**").permitAll()                        // WebSocket + SockJS handshake
                         .requestMatchers("/api/messages/**").permitAll()              // Messaging REST endpoints
+                        .requestMatchers("/api/ai/**").permitAll()                    // AI Chat endpoint
                         .requestMatchers(HttpMethod.GET, "/api/properties/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/owner/**").hasAnyRole("OWNER", "ADMIN")
